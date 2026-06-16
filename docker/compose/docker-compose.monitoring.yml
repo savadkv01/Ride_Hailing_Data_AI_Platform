@@ -33,6 +33,7 @@ services:
       - prometheus
     networks:
       - monitoring_net
+      - platform_core_net
 
 volumes:
   prometheus_data:

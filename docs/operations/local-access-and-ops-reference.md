@@ -114,10 +114,51 @@ docker compose --env-file docker/compose/.env.local \
 ## 9) Quick API Checks
 
 ```powershell
-curl http://localhost:8000/health
-curl "http://localhost:8000/api/v1/monitoring/pipeline-runs/latest?limit=10"
-curl http://localhost:8080/v1/.well-known/ready
+# Health
+Invoke-RestMethod http://localhost:8000/health
+
+# City daily KPIs
+Invoke-RestMethod "http://localhost:8000/api/v1/analytics/city-daily"
+
+# RAG assistant (Ollama + Weaviate)
+Invoke-RestMethod http://localhost:8000/api/v1/rag/ask -Method Post `
+  -ContentType application/json `
+  -Body '{"question":"How is surge pricing calculated?","top_k":3}'
+
+# ML model predict
+Invoke-RestMethod http://localhost:8000/api/v1/models/predict -Method Post `
+  -ContentType application/json `
+  -Body '{"model_name":"surge_model","features":{"completed_trips":5,"cancelled_trips":1,"gross_fare_total":80,"driver_payout_total":60}}'
+
+# Model status (artifact exists?)
+Invoke-RestMethod http://localhost:8000/api/v1/models/status
+
+# MongoDB operational endpoints
+Invoke-RestMethod "http://localhost:8000/api/v1/ops/fraud-cases"
+Invoke-RestMethod "http://localhost:8000/api/v1/ops/rider-sessions"
+Invoke-RestMethod "http://localhost:8000/api/v1/ops/support-tickets"
+
+# Observability
+Invoke-RestMethod "http://localhost:8000/api/v1/monitoring/pipeline-runs/latest?limit=10"
+Invoke-RestMethod http://localhost:8080/v1/.well-known/ready
 ```
+
+### Full FastAPI endpoint reference
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/health` | Liveness check |
+| GET | `/api/v1/analytics/city-daily` | City KPI mart — completed trips, fares, surge per city/day |
+| POST | `/api/v1/rag/ask` | RAG assistant — Weaviate retrieval + Ollama LLM answer |
+| POST | `/api/v1/models/predict` | ML inference — demand/surge/fraud/churn models |
+| GET | `/api/v1/models/status` | Check which model `.joblib` artifacts exist |
+| GET | `/api/v1/ops/fraud-cases` | MongoDB — recent fraud cases (filter: `?city_id=`) |
+| GET | `/api/v1/ops/rider-sessions` | MongoDB — rider app session aggregates (filter: `?rider_id=`) |
+| GET | `/api/v1/ops/support-tickets` | MongoDB — support tickets (filter: `?city_id=&status=`) |
+| POST | `/api/v1/ops/support-tickets` | MongoDB — create a support ticket |
+| GET | `/api/v1/monitoring/data-quality/latest` | Recent DQ audit rows |
+| GET | `/api/v1/monitoring/pipeline-runs/latest` | Recent pipeline run audit rows |
+| GET | `/metrics` | Prometheus scrape target |
 
 ## 10) Open-Data Batch Parameters (NYC + Chicago)
 
@@ -277,7 +318,150 @@ When gates pass consistently:
 - Prefer config-only onboarding where source type already supported.
 - Use synthetic-only onboarding if open data is not yet production-ready.
 
+## 14) Ollama LLM Runtime
+
+Ollama provides on-device LLM inference for embeddings and RAG chat generation.
+
+### Pulled models (current)
+
+| Model | Purpose | Size |
+|---|---|---|
+| `nomic-embed-text` | Text embeddings for Weaviate indexing + RAG search (768-dim) | 274 MB |
+| `llama3.2:3b` | RAG chat generation — answers grounded in retrieved documents | 2.0 GB |
+
+### Check models
+```powershell
+docker exec rh-ollama ollama list
+```
+
+### Pull a model (if missing after container recreate)
+```powershell
+docker exec rh-ollama ollama pull nomic-embed-text
+docker exec rh-ollama ollama pull llama3.2:3b
+```
+
+> **Note:** Ollama models are stored in Docker volume `ollama_data` and survive `docker stop`/`docker start`. They are only lost if `docker compose down -v` is run.
+
+### Test embedding
+```powershell
+Invoke-RestMethod http://localhost:11434/api/embeddings -Method Post `
+  -ContentType application/json `
+  -Body '{"model":"nomic-embed-text","prompt":"surge pricing"}'
+```
+
+## 15) Weaviate Vector Store
+
+- Class: `RideDocument`
+- Vector dimensions: **768** (Ollama `nomic-embed-text`)
+- Documents indexed: **50** (from 5 synthetic corpus sources: FAQ, reviews, support tickets, policy docs, fraud cases)
+- Indexed by: `vector/pipeline/build_and_index_vectors.py`
+- Config: `vector/config/vector_index_config.yaml` — `embedding.provider: ollama`
+
+### Re-index after model change
+If the embedding model changes dimension, the class must be dropped and recreated:
+```powershell
+# Drop class
+Invoke-RestMethod http://localhost:8080/v1/schema/RideDocument -Method Delete
+
+# Re-index with new model
+.venv\Scripts\python.exe vector/pipeline/build_and_index_vectors.py --config vector/config/vector_index_config.yaml
+```
+
+### Check object count
+```powershell
+Invoke-RestMethod "http://localhost:8080/v1/objects?class=RideDocument&limit=1" | Select-Object -ExpandProperty totalResults
+```
+
+## 16) MongoDB Operational Store
+
+MongoDB holds semi-structured operational events synced from the Silver layer.
+
+### Collections
+
+| Collection | Contents | Synced from |
+|---|---|---|
+| `fraud_cases` | Fraud signal events, risk band, fraud score | `staging.silver_canonical_events` WHERE `event_type IN ('fraud_signal', ...)` |
+| `rider_app_sessions` | Per-rider session aggregates (completion rate, trip counts) | Aggregated from trip events in Silver |
+| `support_tickets` | Support ticket events + manual API inserts | Silver events + `POST /api/v1/ops/support-tickets` |
+
+### Run sync
+```powershell
+.venv\Scripts\python.exe scripts/sync_events_to_mongodb.py
+```
+Run this after every Silver load to keep MongoDB current.
+
+### Direct MongoDB access
+```powershell
+docker exec rh-mongodb mongosh -u ride_mongo_admin -p ride_mongo_password --authenticationDatabase admin ride_hailing_ops --eval "db.fraud_cases.countDocuments()"
+```
+
+## 17) Grafana Dashboard
+
+- URL: `http://localhost:3000`
+- Default credentials: `admin` / `admin`
+- Dashboard: **Dashboards → Ride Hailing Platform → Ride-Hailing Platform KPIs**
+
+### Provisioned files
+| File | Purpose |
+|---|---|
+| `docker/grafana/provisioning/datasources/datasource.yml` | Prometheus (default) + PostgreSQL datasources |
+| `docker/grafana/provisioning/dashboards/dashboard.yml` | Dashboard provider config |
+| `docker/grafana/provisioning/dashboards/ride_hailing_kpis.json` | Platform KPI dashboard definition |
+
+### Dashboard panels
+| Panel | Data source | Query |
+|---|---|---|
+| City Daily KPIs table | PostgreSQL | `gold.mart_city_daily_kpis` |
+| Completed Trips / Gross Fare over time | PostgreSQL | `gold.mart_city_daily_kpis` time series |
+| Surge multiplier / Driver payout / Platform revenue / Trips today | PostgreSQL | Latest date in `mart_city_daily_kpis` |
+| Recent Pipeline Runs | PostgreSQL | `metadata.pipeline_run_audit` |
+| Service Up/Down | Prometheus | `up` metric per job |
+| FastAPI Request Rate + p95 Latency | Prometheus | `fastapi_requests_total`, `fastapi_request_latency_seconds_bucket` |
+
+### Network requirement
+Grafana must be on both `monitoring_net` AND `platform_core_net` to reach PostgreSQL by hostname.
+This is set in `docker/compose/docker-compose.monitoring.yml`. If manually reconnecting:
+```powershell
+docker network connect platform_core_net rh-grafana
+```
+
+## 18) Data Persistence Reference
+
+| Data | Storage | Survives `docker stop/start`? | Survives `docker compose down`? | Lost on `down -v`? |
+|---|---|---|---|---|
+| PostgreSQL (Gold tables, staging, metadata) | Named volume `postgres_data` | ✅ Yes | ✅ Yes | ❌ Yes |
+| Kafka topic messages + offsets | Named volume `kafka_data` | ✅ Yes | ✅ Yes | ❌ Yes |
+| MongoDB collections | Named volume `mongodb_data` | ✅ Yes | ✅ Yes | ❌ Yes |
+| Weaviate vectors | Named volume `vector_data` | ✅ Yes | ✅ Yes | ❌ Yes |
+| Ollama model weights | Named volume `ollama_data` | ✅ Yes | ✅ Yes | ❌ Yes |
+| Grafana dashboards/settings | Named volume `grafana_data` | ✅ Yes | ✅ Yes | ❌ Yes |
+| Prometheus metrics history | Named volume `prometheus_data` | ✅ Yes | ✅ Yes | ❌ Yes |
+| Spark checkpoints | Named volume `spark_checkpoints` | ✅ Yes | ✅ Yes | ❌ Yes |
+| Lakehouse Bronze/Silver/Gold parquet | Bind-mount → `lakehouse/` host folder | ✅ Yes | ✅ Yes | ✅ Yes (host folder) |
+| ML model artifacts (`*.joblib`) | Bind-mount → `ml/artifacts/` host folder | ✅ Yes | ✅ Yes | ✅ Yes (host folder) |
+
+> **Warning:** Never run `docker compose down -v` unless intentionally resetting the entire platform. All named volumes will be destroyed.
+
 ## 13) Contract Validation Controls (Stage 15)
+
+Canonical contract file:
+- `config/contracts/op_trip_events_contract_v1.json`
+
+Validator module:
+- `scripts/contract_validator.py`
+
+Enforced paths:
+- `ingestion/open_data/normalize_nyc_to_canonical.py`
+- `ingestion/open_data/normalize_chicago_to_canonical.py`
+
+Configurable path:
+- `scripts/load_kafka_to_postgres.py` validates `trip_completed` events and supports:
+  - `CONTRACT_VALIDATION_MODE=warn` (default)
+  - `CONTRACT_VALIDATION_MODE=enforce` (fails pipeline on violations)
+
+Recommended production posture:
+- keep `warn` in pilot rollout
+- switch to `enforce` after city/source validation stabilizes
 
 Canonical contract file:
 - `config/contracts/op_trip_events_contract_v1.json`

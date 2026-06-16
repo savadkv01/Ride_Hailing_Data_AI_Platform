@@ -5,3 +5,4 @@ requests==2.32.3
 psycopg2-binary==2.9.10
 joblib==1.5.1
 scikit-learn==1.5.2
+pymongo==4.8.0

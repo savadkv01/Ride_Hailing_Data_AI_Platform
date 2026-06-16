@@ -1,6 +1,6 @@
 # Stage 10 - Vector Embedding Pipeline
 
-This module builds vector-ready corpora from metadata-driven synthetic sources, computes embeddings, and indexes them into Weaviate.
+This module builds vector-ready corpora from metadata-driven synthetic sources, computes embeddings using Ollama, and indexes them into Weaviate.
 
 ## Inputs
 - Source catalog index:
@@ -11,14 +11,21 @@ This module builds vector-ready corpora from metadata-driven synthetic sources, 
 ## Pipeline script
 - `vector/pipeline/build_and_index_vectors.py`
 
-## Configuration
-- `vector/config/vector_index_config.yaml`
+## Configuration (`vector/config/vector_index_config.yaml`)
 
-Key options:
-- `embedding.provider`: `hash` (default) or `ollama`
-- `embedding.ollama_model`: embedding model name for Ollama
-- `weaviate.class_name`: target vector class
-- `generation.docs_per_source`: synthetic docs generated per source
+| Setting | Value |
+|---|---|
+| `embedding.provider` | `ollama` |
+| `embedding.ollama_model` | `nomic-embed-text` |
+| `embedding.hash_dim` | 256 (used only for fallback) |
+| `weaviate.class_name` | `RideDocument` |
+| `weaviate.batch_size` | 50 |
+| `generation.docs_per_source` | 10 |
+
+## Current state
+- **50 documents** indexed across 5 corpus sources: FAQ, reviews, support tickets, policy docs, fraud cases
+- **768-dim vectors** from Ollama `nomic-embed-text`
+- Weaviate class `RideDocument` created at first run
 
 ## Install dependencies
 ```bash
@@ -31,11 +38,20 @@ python vector/pipeline/build_and_index_vectors.py
 ```
 
 ## Expected output
-A JSON summary such as:
 ```json
-{"generated_docs": 50, "indexed_docs_total": 50}
+{"run_id": "vector-...", "generated_docs": 50, "indexed_docs_total": 50}
+```
+
+## Re-indexing after embedding model change
+If the embedding model changes (different output dimensions), the Weaviate class must be dropped first:
+```powershell
+# Drop existing class
+Invoke-RestMethod http://localhost:8080/v1/schema/RideDocument -Method Delete
+# Re-index
+.venv\Scripts\python.exe vector/pipeline/build_and_index_vectors.py
 ```
 
 ## Notes
-- Hash embeddings provide deterministic local fallback when embedding models are not pulled.
-- To use real embeddings, set `embedding.provider: ollama` and ensure Ollama model is available.
+- Ollama `nomic-embed-text` produces 768-dim vectors. The existing class must have matching dimensions.
+- Hash embedding fallback (256-dim) is available via `embedding.provider: hash` when Ollama is not running.
+- Hash and Ollama vectors **cannot be mixed in the same Weaviate class** — drop and recreate the class when switching providers.

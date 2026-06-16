@@ -4,7 +4,7 @@ weaviate:
   default_top_k: 5
 
 embedding:
-  provider: hash
+  provider: ollama
   hash_dim: 256
   ollama_url: http://localhost:11434
   ollama_embedding_model: nomic-embed-text

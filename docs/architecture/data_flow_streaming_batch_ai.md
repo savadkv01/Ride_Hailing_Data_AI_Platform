@@ -32,12 +32,16 @@ flowchart LR
     G --> MF[ML Feature Builder\nBuild Feature Tables]
     MF --> MLT[(ml feature tables)]
     MLT --> MT[Model Training\nDemand Surge Fraud Churn]
-    MT --> MA[(ml artifacts joblib)]
+    MT --> MA[(ml artifacts joblib\nml/artifacts/ bind-mount)]
 
-    G --> VC[Vector Builder\nBuild And Index Vectors]
-    VC --> WV[(Weaviate\nRideDocument)]
-    WV --> RAG[RAG Assistant\nRide Intelligence Assistant]
-    RAG --> API[FastAPI Endpoints]
+    ST --> MS[MongoDB Sync\nsync_events_to_mongodb.py]
+    MS --> MDB[(MongoDB\nfraud_cases\nrider_app_sessions\nsupport_tickets)]
+    MDB --> API
+
+    G --> VC[Vector Builder\nBuild And Index Vectors\nOllama nomic-embed-text 768-dim]
+    VC --> WV[(Weaviate\nRideDocument\n50 docs 768-dim)]
+    WV --> RAG[RAG Assistant\nRide Intelligence Assistant\nOllama llama3.2:3b]
+    RAG --> API[FastAPI Endpoints\n/analytics /rag /models /ops]
   end
 
   subgraph S5[Orchestration & Observability]
@@ -76,3 +80,7 @@ flowchart LR
 - Stage 14 introduces multi-city scaling policy with city/date partitioning, capacity tiers, and configuration-driven city onboarding (`config/scaling/multi_city_expansion.yaml`).
 - Airflow controls selective stage execution (ingestion-only, AI-only, DQ-only, full e2e).
 - Centralized run auditing captures status, timing, and task context in `metadata.pipeline_run_audit`.
+- **MongoDB sync** (`scripts/sync_events_to_mongodb.py`) reads from `staging.silver_canonical_events` and upserts into three MongoDB collections: `fraud_cases`, `rider_app_sessions`, `support_tickets`. Exposed via `GET /api/v1/ops/*` endpoints.
+- **Ollama models in use**: `nomic-embed-text` (768-dim embeddings for Weaviate) and `llama3.2:3b` (RAG answer generation). Both stored in `ollama_data` Docker volume.
+- **ML artifact persistence**: `ml/artifacts/` is bind-mounted into FastAPI container (`/app/ml/artifacts`). Models trained on host persist automatically without `docker cp`.
+- **Grafana** is provisioned with a PostgreSQL datasource and a platform KPI dashboard (`docker/grafana/provisioning/dashboards/ride_hailing_kpis.json`). Grafana must be on both `monitoring_net` and `platform_core_net` to reach the `postgres` hostname.

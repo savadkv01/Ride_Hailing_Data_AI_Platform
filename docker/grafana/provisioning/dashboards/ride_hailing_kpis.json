@@ -1,0 +1,653 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": { "list": [] },
+  "description": "Ride-Hailing Platform — City KPIs, Pipeline Health, and API Metrics",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "City KPIs — Gold Warehouse",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "gross_fare_total" },
+            "properties": [
+              { "id": "unit", "value": "currencyUSD" },
+              { "id": "decimals", "value": 2 }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "avg_surge_multiplier" },
+            "properties": [
+              { "id": "decimals", "value": 2 },
+              { "id": "color", "value": { "mode": "thresholds" } },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "green", "value": null },
+                    { "color": "yellow", "value": 1.3 },
+                    { "color": "red", "value": 1.8 }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "footer": { "show": false },
+        "showHeader": true
+      },
+      "pluginVersion": "11.2.2",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT city_id AS \"City\", event_date AS \"Date\", completed_trips AS \"Completed Trips\", cancelled_trips AS \"Cancelled Trips\", ROUND(gross_fare_total::numeric, 2) AS gross_fare_total, ROUND(platform_fee_total::numeric, 2) AS \"Platform Fee ($)\", ROUND(driver_payout_total::numeric, 2) AS \"Driver Payout ($)\", ROUND(avg_surge_multiplier::numeric, 2) AS avg_surge_multiplier FROM gold.mart_city_daily_kpis ORDER BY event_date DESC, city_id",
+          "refId": "A"
+        }
+      ],
+      "title": "City Daily KPIs",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+      "id": 2,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT event_date AS time, city_id AS metric, completed_trips AS value FROM gold.mart_city_daily_kpis ORDER BY event_date",
+          "refId": "A"
+        }
+      ],
+      "title": "Completed Trips Over Time by City",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
+      "id": 3,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT event_date AS time, city_id AS metric, ROUND(gross_fare_total::numeric, 2) AS value FROM gold.mart_city_daily_kpis ORDER BY event_date",
+          "refId": "A"
+        }
+      ],
+      "title": "Gross Fare Total Over Time by City",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 },
+      "id": 101,
+      "title": "Surge & Driver Earnings",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1.3 },
+              { "color": "red", "value": 1.8 }
+            ]
+          },
+          "unit": "none",
+          "decimals": 2,
+          "min": 1,
+          "max": 3
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 18 },
+      "id": 4,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT city_id AS metric, ROUND(avg_surge_multiplier::numeric, 2) AS \"Avg Surge\" FROM gold.mart_city_daily_kpis WHERE event_date = (SELECT MAX(event_date) FROM gold.mart_city_daily_kpis) ORDER BY city_id",
+          "refId": "A"
+        }
+      ],
+      "title": "Current Avg Surge Multiplier by City",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": { "unit": "currencyUSD", "decimals": 2, "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] } },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 18 },
+      "id": 5,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT city_id AS metric, ROUND(driver_payout_total::numeric, 2) AS \"Driver Payout\" FROM gold.mart_city_daily_kpis WHERE event_date = (SELECT MAX(event_date) FROM gold.mart_city_daily_kpis) ORDER BY city_id",
+          "refId": "A"
+        }
+      ],
+      "title": "Driver Payout Today by City",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": { "unit": "currencyUSD", "decimals": 2, "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "purple", "value": null }] } },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 18 },
+      "id": 6,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT city_id AS metric, ROUND(platform_fee_total::numeric, 2) AS \"Platform Revenue\" FROM gold.mart_city_daily_kpis WHERE event_date = (SELECT MAX(event_date) FROM gold.mart_city_daily_kpis) ORDER BY city_id",
+          "refId": "A"
+        }
+      ],
+      "title": "Platform Revenue Today by City",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 18 },
+      "id": 7,
+      "options": { "reduceOptions": { "calcs": ["sum"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT city_id AS metric, completed_trips::float AS \"Trips\" FROM gold.mart_city_daily_kpis WHERE event_date = (SELECT MAX(event_date) FROM gold.mart_city_daily_kpis) ORDER BY city_id",
+          "refId": "A"
+        }
+      ],
+      "title": "Completed Trips Today by City",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 24 },
+      "id": 102,
+      "title": "Pipeline Audit & Data Quality",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "status" },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  { "type": "value", "options": { "success": { "color": "green", "text": "SUCCESS", "index": 0 } } },
+                  { "type": "value", "options": { "failed": { "color": "red", "text": "FAILED", "index": 1 } } }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 25 },
+      "id": 8,
+      "options": { "cellHeight": "sm", "footer": { "show": false }, "showHeader": true },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT to_char(started_at, 'YYYY-MM-DD HH24:MI') AS \"Started\", pipeline_name AS \"Pipeline\", stage_name AS \"Stage\", status, to_char(ended_at, 'YYYY-MM-DD HH24:MI') AS \"Ended\", ROUND(CAST(details->>'duration_seconds' AS numeric), 2) AS \"Duration (s)\" FROM metadata.pipeline_run_audit ORDER BY started_at DESC LIMIT 20",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent Pipeline Runs",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "status" },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  { "type": "value", "options": { "passed": { "color": "green", "text": "PASSED", "index": 0 } } },
+                  { "type": "value", "options": { "failed": { "color": "red", "text": "FAILED", "index": 1 } } }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Violations" },
+            "properties": [
+              { "id": "color", "value": { "mode": "thresholds" } },
+              { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 33 },
+      "id": 12,
+      "options": { "cellHeight": "sm", "footer": { "show": false }, "showHeader": true },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT to_char(observed_at, 'YYYY-MM-DD HH24:MI') AS \"Checked At\", run_id, rule_id AS \"Rule\", target_entity AS \"Target\", status, violation_count AS \"Violations\" FROM metadata.data_quality_audit ORDER BY observed_at DESC LIMIT 20",
+          "refId": "A"
+        }
+      ],
+      "title": "Data Quality Audit Results",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 41 },
+      "id": 103,
+      "title": "API & Platform Health (Prometheus)",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }, "mappings": [{ "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }] },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 42 },
+      "id": 9,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "horizontal", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "up", "legendFormat": "{{job}}", "refId": "A" }
+      ],
+      "title": "Service Up/Down",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineWidth": 2, "fillOpacity": 10 }, "unit": "reqps" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 46 },
+      "id": 10,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "rate(fastapi_requests_total[1m])", "legendFormat": "{{method}} {{endpoint}}", "refId": "A" }
+      ],
+      "title": "FastAPI Request Rate (req/s)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineWidth": 2, "fillOpacity": 10 }, "unit": "s" },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 46 },
+      "id": 11,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" }, "expr": "histogram_quantile(0.95, rate(fastapi_request_latency_seconds_bucket[1m]))", "legendFormat": "p95 {{endpoint}}", "refId": "A" }
+      ],
+      "title": "FastAPI p95 Latency",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 55 },
+      "id": 104,
+      "title": "Fraud Detection & Rider Churn Risk",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }, { "color": "yellow", "value": 50 }, { "color": "red", "value": 100 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 56 },
+      "id": 13,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code", "format": "table", "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS \"Total Fraud Cases\" FROM gold.fact_fraud",
+          "refId": "A"
+        }
+      ],
+      "title": "Total Fraud Cases",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 15 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 56 },
+      "id": 14,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code", "format": "table", "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS \"High-Risk Cases\" FROM gold.fact_fraud WHERE risk_band = 'high'",
+          "refId": "A"
+        }
+      ],
+      "title": "High-Risk Cases",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 15 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 56 },
+      "id": 15,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code", "format": "table", "rawQuery": true,
+          "rawSql": "SELECT COUNT(*) AS \"Blocked Cases\" FROM gold.fact_fraud WHERE blocked_flag = true",
+          "refId": "A"
+        }
+      ],
+      "title": "Blocked Cases",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 3,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "red", "value": 0.7 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 56 },
+      "id": 16,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code", "format": "table", "rawQuery": true,
+          "rawSql": "SELECT ROUND(AVG(fraud_score)::numeric, 3) AS \"Avg Fraud Score\" FROM gold.fact_fraud",
+          "refId": "A"
+        }
+      ],
+      "title": "Avg Fraud Score",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Avg Score" }, "properties": [{ "id": "color", "value": { "mode": "thresholds" } }, { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "red", "value": 0.7 }] } }] },
+          { "matcher": { "id": "byName", "options": "Risk Band" }, "properties": [{ "id": "mappings", "value": [{ "type": "value", "options": { "high": { "color": "red", "text": "HIGH", "index": 0 } } }, { "type": "value", "options": { "medium": { "color": "yellow", "text": "MEDIUM", "index": 1 } } }, { "type": "value", "options": { "low": { "color": "green", "text": "LOW", "index": 2 } } }] }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 60 },
+      "id": 17,
+      "options": { "cellHeight": "sm", "footer": { "show": false }, "showHeader": true },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code", "format": "table", "rawQuery": true,
+          "rawSql": "SELECT risk_band AS \"Risk Band\", COUNT(*) AS \"Cases\", ROUND(AVG(fraud_score)::numeric, 3) AS \"Avg Score\", SUM(CASE WHEN blocked_flag THEN 1 ELSE 0 END) AS \"Blocked\", dc.city_id AS \"City\" FROM gold.fact_fraud ff LEFT JOIN gold.dim_city dc ON ff.city_key = md5(dc.city_id) GROUP BY risk_band, dc.city_id ORDER BY risk_band DESC, dc.city_id",
+          "refId": "A"
+        }
+      ],
+      "title": "Fraud Cases by Risk Band & City",
+      "type": "table"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineWidth": 2, "fillOpacity": 15 } },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 60 },
+      "id": 18,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code", "format": "time_series", "rawQuery": true,
+          "rawSql": "SELECT date_trunc('day', created_at) AS time, risk_band AS metric, COUNT(*) AS value FROM gold.fact_fraud GROUP BY 1, 2 ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Fraud Cases Over Time by Risk Band",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 10 }, { "color": "red", "value": 30 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 8, "x": 0, "y": 68 },
+      "id": 19,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code", "format": "table", "rawQuery": true,
+          "rawSql": "SELECT SUM(churned_7d) AS \"Churned Riders (7d)\" FROM ml.feature_rider_churn_daily WHERE activity_date = (SELECT MAX(activity_date) FROM ml.feature_rider_churn_daily)",
+          "refId": "A"
+        }
+      ],
+      "title": "Churned Riders (Latest Snapshot)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 8, "x": 8, "y": 68 },
+      "id": 20,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code", "format": "table", "rawQuery": true,
+          "rawSql": "SELECT COUNT(DISTINCT rider_key) AS \"Active Riders\" FROM ml.feature_rider_churn_daily WHERE activity_date = (SELECT MAX(activity_date) FROM ml.feature_rider_churn_daily) AND trip_events > 0",
+          "refId": "A"
+        }
+      ],
+      "title": "Active Riders (Latest Snapshot)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "unit": "percent",
+          "decimals": 1,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 20 }, { "color": "red", "value": 40 }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 8, "x": 16, "y": 68 },
+      "id": 21,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "textMode": "auto", "colorMode": "background" },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code", "format": "table", "rawQuery": true,
+          "rawSql": "SELECT ROUND(100.0 * SUM(churned_7d) / NULLIF(COUNT(*), 0), 1) AS \"Churn Rate %\" FROM ml.feature_rider_churn_daily WHERE activity_date = (SELECT MAX(activity_date) FROM ml.feature_rider_churn_daily)",
+          "refId": "A"
+        }
+      ],
+      "title": "Churn Rate % (Latest Snapshot)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "custom": { "lineWidth": 2, "fillOpacity": 10 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "churned_riders" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "active_riders" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 72 },
+      "id": 22,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "${DS_POSTGRESQL}" },
+          "editorMode": "code", "format": "time_series", "rawQuery": true,
+          "rawSql": "SELECT activity_date AS time, 'active_riders' AS metric, COUNT(DISTINCT rider_key)::float AS value FROM ml.feature_rider_churn_daily WHERE trip_events > 0 GROUP BY activity_date UNION ALL SELECT activity_date AS time, 'churned_riders' AS metric, SUM(churned_7d)::float AS value FROM ml.feature_rider_churn_daily GROUP BY activity_date ORDER BY time",
+          "refId": "A"
+        }
+      ],
+      "title": "Active vs Churned Riders Over Time",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["ride-hailing", "kpi", "platform"],
+  "templating": {
+    "list": [
+      {
+        "hide": 2,
+        "name": "DS_POSTGRESQL",
+        "query": "postgres",
+        "type": "datasource"
+      },
+      {
+        "hide": 2,
+        "name": "DS_PROMETHEUS",
+        "query": "prometheus",
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-7d", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Ride-Hailing Platform KPIs",
+  "uid": "rh-platform-kpis",
+  "version": 1
+}

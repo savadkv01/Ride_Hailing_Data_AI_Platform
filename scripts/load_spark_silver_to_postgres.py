@@ -154,8 +154,15 @@ def main() -> None:
     )
     """
 
+    def _native(v):
+        if pd.isna(v):
+            return None
+        if hasattr(v, "item"):  # numpy scalar → Python native
+            return v.item()
+        return v
+
     rows = [
-        tuple(None if pd.isna(value) else value for value in record)
+        tuple(_native(value) for value in record)
         for record in df.itertuples(index=False, name=None)
     ]
 

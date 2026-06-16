@@ -126,9 +126,9 @@ services:
       MONGO_URI: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongodb:27017
       WEAVIATE_URL: http://weaviate:8080
       OLLAMA_URL: http://ollama:11434
+    volumes:
+      - ../../ml/artifacts:/app/ml/artifacts:ro
     depends_on:
-      kafka:
-        condition: service_healthy
       postgres:
         condition: service_healthy
       mongodb:

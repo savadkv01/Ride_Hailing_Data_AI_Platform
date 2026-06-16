@@ -3,7 +3,15 @@ import sys
 from pathlib import Path
 
 from pyspark.sql import functions as F
-from pyspark.sql.types import MapType, StringType
+from pyspark.sql.types import (
+    IntegerType,
+    LongType,
+    MapType,
+    StringType,
+    StructField,
+    StructType,
+    TimestampType,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -42,7 +50,26 @@ def main() -> None:
     spark = build_spark_session("stage7_silver_canonical_events")
     spark.sparkContext.setLogLevel("WARN")
 
-    bronze_df = spark.readStream.format("parquet").load(f"{args.bronze_root}/*")
+    # Explicit schema avoids Hive partition inference assertion in ParquetFileFormat
+    # when reading Bronze parquet written with ingest_date partitioning via wildcard path.
+    bronze_schema = StructType([
+        StructField("topic", StringType(), True),
+        StructField("partition", IntegerType(), True),
+        StructField("offset", LongType(), True),
+        StructField("kafka_timestamp", TimestampType(), True),
+        StructField("timestampType", IntegerType(), True),
+        StructField("key", StringType(), True),
+        StructField("value", StringType(), True),
+        StructField("ingestion_time", TimestampType(), True),
+        StructField("bronze_entity", StringType(), True),
+    ])
+
+    bronze_df = (
+        spark.readStream.format("parquet")
+        .schema(bronze_schema)
+        .option("recursiveFileLookup", "true")
+        .load(args.bronze_root)
+    )
 
     parsed = bronze_df.withColumn("payload", F.from_json(F.col("value"), MapType(StringType(), StringType())))
 

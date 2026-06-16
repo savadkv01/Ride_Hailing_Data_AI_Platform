@@ -1,7 +1,7 @@
 {
   "kafka": {
     "bootstrap_servers": "kafka:9092",
-    "starting_offsets": "latest",
+    "starting_offsets": "earliest",
     "fail_on_data_loss": false
   },
   "topics": [
@@ -9,7 +9,7 @@
     {"name": "rh.driver.location.pings.v1", "bronze_entity": "op_driver_location_events"},
     {"name": "rh.rider.app.events.v1", "bronze_entity": "op_rider_app_events"},
     {"name": "rh.payment.transactions.v1", "bronze_entity": "op_payment_events"},
-    {"name": "rh.pricing.surge.signals.v1", "bronze_entity": "op_city_agg_events"},
+    {"name": "rh.pricing.surge.signals.v1", "bronze_entity": "op_surge_pricing_events"},
     {"name": "rh.promotion.events.v1", "bronze_entity": "op_promotion_events"},
     {"name": "rh.refund.events.v1", "bronze_entity": "op_refund_events"},
     {"name": "rh.review.events.v1", "bronze_entity": "op_review_events"},

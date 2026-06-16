@@ -5,7 +5,7 @@ generation:
   docs_per_source: 10
 
 embedding:
-  provider: hash
+  provider: ollama
   hash_dim: 256
   ollama_url: http://localhost:11434
   ollama_model: nomic-embed-text

@@ -13,6 +13,13 @@ from fastapi import FastAPI, HTTPException, Request, Response
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from pydantic import BaseModel, Field
 
+try:
+    from pymongo import MongoClient
+    from pymongo.errors import PyMongoError
+    _PYMONGO_AVAILABLE = True
+except ImportError:
+    _PYMONGO_AVAILABLE = False
+
 app = FastAPI(title="Ride Hailing Platform API", version="0.1.0")
 
 REQUEST_COUNT = Counter(
@@ -90,6 +97,17 @@ def get_postgres_conn():
     )
 
 
+def get_mongo_db():
+    if not _PYMONGO_AVAILABLE:
+        raise HTTPException(status_code=503, detail="pymongo not available")
+    uri = os.getenv("MONGO_URI", "").strip()
+    # Fall back to default when env var is unset or has blank credentials
+    if not uri or uri == "mongodb://:@mongodb:27017":
+        uri = "mongodb://ride_mongo_admin:ride_mongo_password@mongodb:27017"
+    client = MongoClient(uri, serverSelectionTimeoutMS=3000)
+    return client["ride_hailing_ops"]
+
+
 def hash_embedding(text: str, dim: int = 256):
     vec = [0.0] * dim
     for token in text.lower().split():
@@ -106,7 +124,20 @@ def hash_embedding(text: str, dim: int = 256):
 def search_weaviate(question: str, top_k: int):
     base_url = os.getenv("WEAVIATE_URL", "http://weaviate:8080").rstrip("/")
     class_name = os.getenv("WEAVIATE_CLASS", "RideDocument")
-    query_vector = hash_embedding(question, int(os.getenv("RAG_HASH_DIM", "256")))
+    ollama_url = os.getenv("OLLAMA_URL", "http://ollama:11434").rstrip("/")
+    embed_model = os.getenv("RAG_EMBED_MODEL", "nomic-embed-text")
+
+    # Try Ollama embedding first, fall back to hash if unavailable
+    try:
+        emb_resp = requests.post(
+            ollama_url + "/api/embeddings",
+            json={"model": embed_model, "prompt": question},
+            timeout=30,
+        )
+        emb_resp.raise_for_status()
+        query_vector = emb_resp.json()["embedding"]
+    except Exception:
+        query_vector = hash_embedding(question, int(os.getenv("RAG_HASH_DIM", "256")))
     vector_text = ", ".join(str(round(v, 8)) for v in query_vector)
 
     gql = f"""
@@ -393,6 +424,97 @@ def pipeline_runs_latest(limit: int = 20) -> dict:
         "row_count": len(rows),
         "rows": [dict(zip(cols, row)) for row in rows],
     }
+
+
+@app.get("/api/v1/ops/fraud-cases")
+def ops_fraud_cases(limit: int = 20, city_id: str = None) -> dict:
+    """List recent fraud cases from MongoDB operational store."""
+    safe_limit = max(1, min(limit, 200))
+    try:
+        db = get_mongo_db()
+        query = {"city_id": city_id} if city_id else {}
+        docs = list(
+            db["fraud_cases"]
+            .find(query, {"_id": 0})
+            .sort("event_time", -1)
+            .limit(safe_limit)
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"MongoDB query failed: {exc}")
+    return {"count": len(docs), "fraud_cases": docs}
+
+
+@app.get("/api/v1/ops/support-tickets")
+def ops_support_tickets(limit: int = 20, city_id: str = None, status: str = None) -> dict:
+    """List recent support tickets from MongoDB operational store."""
+    safe_limit = max(1, min(limit, 200))
+    try:
+        db = get_mongo_db()
+        query = {}
+        if city_id:
+            query["city_id"] = city_id
+        if status:
+            query["status"] = status
+        docs = list(
+            db["support_tickets"]
+            .find(query, {"_id": 0})
+            .sort("event_time", -1)
+            .limit(safe_limit)
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"MongoDB query failed: {exc}")
+    return {"count": len(docs), "support_tickets": docs}
+
+
+@app.get("/api/v1/ops/rider-sessions")
+def ops_rider_sessions(limit: int = 20, rider_id: str = None) -> dict:
+    """List recent rider app sessions from MongoDB operational store."""
+    safe_limit = max(1, min(limit, 200))
+    try:
+        db = get_mongo_db()
+        query = {"rider_id": rider_id} if rider_id else {}
+        docs = list(
+            db["rider_app_sessions"]
+            .find(query, {"_id": 0})
+            .sort("event_time", -1)
+            .limit(safe_limit)
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"MongoDB query failed: {exc}")
+    return {"count": len(docs), "rider_sessions": docs}
+
+
+@app.post("/api/v1/ops/support-tickets")
+def ops_create_support_ticket(ticket: dict) -> dict:
+    """Create a new support ticket in MongoDB operational store."""
+    required = {"support_ticket_id", "rider_id", "city_id", "issue_type", "description"}
+    missing = required - ticket.keys()
+    if missing:
+        raise HTTPException(status_code=400, detail=f"Missing fields: {missing}")
+    try:
+        db = get_mongo_db()
+        doc = {
+            **ticket,
+            "status": ticket.get("status", "open"),
+            "event_time": ticket.get("event_time", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())),
+            "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        }
+        db["support_tickets"].update_one(
+            {"support_ticket_id": doc["support_ticket_id"]},
+            {"$set": doc},
+            upsert=True,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"MongoDB write failed: {exc}")
+    return {"status": "created", "support_ticket_id": doc["support_ticket_id"]}
 
 
 @app.get("/metrics")
