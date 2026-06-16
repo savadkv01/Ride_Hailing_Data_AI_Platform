@@ -1,0 +1,30 @@
+name: ride_hailing_warehouse
+version: 1.0.0
+config-version: 2
+
+profile: ride_hailing_warehouse
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+
+models:
+  ride_hailing_warehouse:
+    staging:
+      +materialized: view
+      +schema: staging
+    dimensions:
+      +materialized: table
+      +schema: gold
+    facts:
+      +materialized: incremental
+      +schema: gold
+      +on_schema_change: append_new_columns
+    marts:
+      +materialized: view
+      +schema: gold
+
+seeds:
+  ride_hailing_warehouse:
+    +schema: reference

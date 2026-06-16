@@ -1,0 +1,28 @@
+{
+  "kafka": {
+    "bootstrap_servers": "kafka:9092",
+    "starting_offsets": "latest",
+    "fail_on_data_loss": false
+  },
+  "topics": [
+    {"name": "rh.trip.lifecycle.events.v1", "bronze_entity": "op_trip_events"},
+    {"name": "rh.driver.location.pings.v1", "bronze_entity": "op_driver_location_events"},
+    {"name": "rh.rider.app.events.v1", "bronze_entity": "op_rider_app_events"},
+    {"name": "rh.payment.transactions.v1", "bronze_entity": "op_payment_events"},
+    {"name": "rh.pricing.surge.signals.v1", "bronze_entity": "op_city_agg_events"},
+    {"name": "rh.promotion.events.v1", "bronze_entity": "op_promotion_events"},
+    {"name": "rh.refund.events.v1", "bronze_entity": "op_refund_events"},
+    {"name": "rh.review.events.v1", "bronze_entity": "op_review_events"},
+    {"name": "rh.earnings.events.v1", "bronze_entity": "op_driver_earnings_events"},
+    {"name": "rh.incentive.events.v1", "bronze_entity": "op_incentive_events"},
+    {"name": "rh.fraud.signals.v1", "bronze_entity": "op_fraud_signal_events"},
+    {"name": "rh.support.tickets.v1", "bronze_entity": "op_support_ticket_events"},
+    {"name": "rh.geo.events.v1", "bronze_entity": "op_geo_events"},
+    {"name": "rh.city.agg.events.v1", "bronze_entity": "op_city_agg_events"},
+    {"name": "rh.revenue.margin.events.v1", "bronze_entity": "op_revenue_margin_events"}
+  ],
+  "quality": {
+    "required_event_fields": ["event_id", "event_time", "city_id"],
+    "watermark": "30 minutes"
+  }
+}

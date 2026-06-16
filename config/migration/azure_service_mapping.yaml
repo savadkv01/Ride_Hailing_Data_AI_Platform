@@ -1,0 +1,74 @@
+version: 1
+updated_at: 2026-03-03
+
+source_to_target_mapping:
+  ingestion:
+    kafka:
+      current: confluentinc/cp-kafka (docker)
+      azure_target: azure_event_hubs_kafka_endpoint
+      notes: preserve topic naming and partition strategy
+  processing:
+    spark_stage7:
+      current: apache/spark standalone (docker)
+      azure_target: azure_databricks_jobs
+      notes: trigger-once jobs become scheduled job tasks
+  warehouse:
+    postgres:
+      current: postgres:16 (docker)
+      azure_target: azure_database_for_postgresql_flexible_server
+      notes: migrate schemas staging/gold/ml/metadata with pg_dump + validation
+  operational_store:
+    mongodb:
+      current: mongo:7 (docker)
+      azure_target: azure_cosmos_db_mongodb_api
+      notes: evaluate compatibility for indexing/query semantics
+  vector:
+    weaviate:
+      current: weaviate container
+      azure_target: azure_ai_search_vector_index
+      notes: migrate RideDocument class fields and vector dimensions
+  llm_runtime:
+    ollama:
+      current: ollama local runtime
+      azure_target: azure_openai
+      notes: split embedding and generation deployments
+  orchestration:
+    airflow:
+      current: apache airflow (docker)
+      azure_target: azure_data_factory_or_managed_airflow
+      notes: preserve DAG task dependency semantics
+  api_layer:
+    fastapi:
+      current: dockerized uvicorn service
+      azure_target: azure_container_apps
+      notes: use managed identity + key vault references
+  observability:
+    prometheus:
+      current: prometheus docker
+      azure_target: azure_monitor_managed_prometheus
+    grafana:
+      current: grafana docker
+      azure_target: azure_managed_grafana
+
+security_mapping:
+  secrets:
+    current: env_files
+    azure_target: azure_key_vault
+  identity:
+    current: static service credentials
+    azure_target: managed_identity + rbac
+  network:
+    current: docker bridge networks
+    azure_target: vnet + private_endpoints + nsg
+
+migration_validation:
+  required_checks:
+    - row_count_parity
+    - contract_validation_pass
+    - data_quality_pass_rate_threshold
+    - api_smoke_tests_pass
+    - pipeline_audit_continuity
+  rollback_policy:
+    strategy: blue_green_or_canary
+    max_error_rate: 0.01
+    max_recovery_time_minutes: 30

@@ -1,0 +1,11 @@
+source_id: synthetic_rider_app_events
+source_type: synthetic_stream
+domain: rider_app_events
+status: active
+contract_version: synthetic_v1
+kafka_topic: rh.rider.app.events.v1
+target_table: op_rider_app_events
+generator_script: ingestion/synthetic/generate_rider_app_events.py
+key_fields: [session_id, event_name]
+watermark_column: event_time
+city_scope: [NYC, CHICAGO, DUBAI]

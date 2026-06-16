@@ -1,0 +1,11 @@
+source_id: synthetic_revenue_margin_events
+source_type: synthetic_stream
+domain: revenue_margin_platform_fee
+status: active
+contract_version: synthetic_v1
+kafka_topic: rh.revenue.margin.events.v1
+target_table: op_revenue_margin_events
+generator_script: ingestion/synthetic/generate_revenue_margin_events.py
+key_fields: [trip_id]
+watermark_column: event_time
+city_scope: [NYC, CHICAGO, DUBAI]

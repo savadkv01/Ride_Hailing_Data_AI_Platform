@@ -1,0 +1,12 @@
+ride_hailing_warehouse:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('POSTGRES_HOST', 'postgres') }}"
+      port: "{{ env_var('POSTGRES_PORT', '5432') | int }}"
+      user: "{{ env_var('POSTGRES_USER', 'ride_admin') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD', 'ride_password') }}"
+      dbname: "{{ env_var('POSTGRES_DB', 'ride_warehouse') }}"
+      schema: gold
+      threads: 4

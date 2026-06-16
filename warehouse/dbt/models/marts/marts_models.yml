@@ -1,0 +1,10 @@
+version: 2
+
+models:
+  - name: mart_city_daily_kpis
+    description: Daily city KPI aggregate for BI dashboards.
+    columns:
+      - name: event_date
+        tests: [not_null]
+      - name: city_id
+        tests: [not_null]

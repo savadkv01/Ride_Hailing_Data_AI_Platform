@@ -1,0 +1,23 @@
+postgres:
+  host: localhost
+  port: 5432
+  database: ride_warehouse
+  user: ride_admin
+  password: ride_password
+
+artifacts:
+  dir: ml/artifacts
+
+training:
+  random_state: 42
+  test_size: 0.2
+
+models:
+  demand:
+    target: completed_trips
+  surge:
+    target: avg_surge_multiplier
+  fraud:
+    target: is_high_risk
+  churn:
+    target: churned_7d

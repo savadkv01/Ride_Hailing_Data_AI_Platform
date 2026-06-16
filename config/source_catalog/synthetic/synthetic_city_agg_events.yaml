@@ -1,0 +1,11 @@
+source_id: synthetic_city_agg_events
+source_type: synthetic_stream
+domain: city_level_aggregation
+status: active
+contract_version: synthetic_v1
+kafka_topic: rh.city.agg.events.v1
+target_table: op_city_agg_events
+generator_script: ingestion/synthetic/generate_city_agg_events.py
+key_fields: [city_id]
+watermark_column: event_time
+city_scope: [NYC, CHICAGO, DUBAI]

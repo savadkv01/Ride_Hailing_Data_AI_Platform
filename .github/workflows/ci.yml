@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  lint-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff pyyaml
+
+      - name: Python syntax check
+        run: |
+          python -m compileall ingestion scripts orchestration vector rag || true
+
+      - name: Ruff lint (non-blocking for bootstrap)
+        run: |
+          ruff check . || true
+
+      - name: Validate JSON contracts
+        run: |
+          python - << 'PY'
+          import json
+          from pathlib import Path
+
+          contract_dir = Path('config/contracts')
+          if contract_dir.exists():
+              for path in contract_dir.glob('*.json'):
+                  with path.open('r', encoding='utf-8') as f:
+                      json.load(f)
+                  print(f'Validated JSON: {path}')
+          else:
+              print('No contract directory found, skipping.')
+          PY
+
+      - name: Validate YAML config files
+        run: |
+          python - << 'PY'
+          from pathlib import Path
+          import yaml
+
+          for path in Path('.').rglob('*.yaml'):
+              if '.git' in path.parts:
+                  continue
+              with path.open('r', encoding='utf-8') as f:
+                  yaml.safe_load(f)
+              print(f'Validated YAML: {path}')
+          PY
+
+      - name: Stage contract validator smoke check
+        run: |
+          python scripts/contract_validator.py --help

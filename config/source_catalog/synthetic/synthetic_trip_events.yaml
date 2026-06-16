@@ -1,0 +1,11 @@
+source_id: synthetic_trip_events
+source_type: synthetic_stream
+domain: trip_lifecycle_tracking
+status: active
+contract_version: synthetic_v1
+kafka_topic: rh.trip.lifecycle.events.v1
+target_table: op_trip_events
+generator_script: ingestion/synthetic/generate_trip_events.py
+key_fields: [trip_id, event_type]
+watermark_column: event_time
+city_scope: [NYC, CHICAGO, DUBAI]

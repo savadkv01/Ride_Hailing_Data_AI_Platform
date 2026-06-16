@@ -1,0 +1,67 @@
+{
+  "contract_name": "op_trip_events",
+  "version": "1.0.0",
+  "status": "active",
+  "owner": "data-platform",
+  "description": "Canonical contract for operational ride trip events used by staging, warehouse, ML, and AI layers.",
+  "primary_key": ["event_id"],
+  "required_fields": [
+    "event_id",
+    "trip_id",
+    "rider_id",
+    "driver_id",
+    "city_id",
+    "event_type",
+    "event_time",
+    "pickup_ts",
+    "dropoff_ts",
+    "distance_km",
+    "duration_sec",
+    "fare_total",
+    "source_system",
+    "source_record_id",
+    "schema_version"
+  ],
+  "field_types": {
+    "event_id": "string",
+    "trip_id": "string",
+    "rider_id": "string",
+    "driver_id": "string",
+    "city_id": "string",
+    "event_type": "string",
+    "event_time": "timestamp",
+    "pickup_ts": "timestamp",
+    "dropoff_ts": "timestamp",
+    "pickup_lat": "float|null",
+    "pickup_lng": "float|null",
+    "dropoff_lat": "float|null",
+    "dropoff_lng": "float|null",
+    "distance_km": "float",
+    "duration_sec": "float",
+    "ingestion_time": "timestamp",
+    "fare_total": "float",
+    "surge_multiplier": "float",
+    "promotion_amount": "float",
+    "platform_fee": "float",
+    "driver_payout": "float",
+    "payment_method_code": "string",
+    "source_system": "string",
+    "source_record_id": "string",
+    "schema_version": "string"
+  },
+  "quality_rules": {
+    "not_null": ["event_id", "trip_id", "city_id", "event_time", "source_system", "schema_version"],
+    "non_negative": ["distance_km", "duration_sec", "fare_total", "platform_fee", "driver_payout"],
+    "allowed_event_type": ["trip_completed"],
+    "allowed_city_ids": ["NYC", "CHICAGO", "SF"]
+  },
+  "breaking_change_policy": {
+    "requires_version_bump": [
+      "remove_required_field",
+      "change_field_type",
+      "rename_field",
+      "change_primary_key"
+    ],
+    "deprecation_window_days": 30
+  }
+}

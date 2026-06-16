@@ -1,0 +1,57 @@
+version: 1
+updated_at: 2026-03-03
+
+principles:
+  - least_privilege
+  - separation_of_duties
+  - auditability
+  - privacy_by_default
+
+roles:
+  platform_admin:
+    schemas: [staging, gold, ml, metadata]
+    permissions: [select, insert, update, delete, ddl]
+  ingestion_writer:
+    schemas: [staging, metadata]
+    permissions: [select, insert, update]
+  dbt_transformer:
+    schemas: [staging, gold, metadata]
+    permissions: [select, insert, update, ddl]
+  ml_pipeline:
+    schemas: [gold, ml, metadata]
+    permissions: [select, insert, update]
+  ai_pipeline:
+    schemas: [gold, metadata]
+    permissions: [select, insert]
+  analyst_readonly:
+    schemas: [gold, ml]
+    permissions: [select]
+  dq_monitor:
+    schemas: [staging, gold, metadata]
+    permissions: [select, insert]
+
+service_to_role_mapping:
+  rh-ingestion-jobs: ingestion_writer
+  rh-warehouse-jobs: dbt_transformer
+  rh-ml-jobs: ml_pipeline
+  rh-ai-jobs: ai_pipeline
+  rh-fastapi: analyst_readonly
+
+sensitive_data_policy:
+  direct_pii_allowed: false
+  pseudonymous_identifiers_required: true
+  encryption_in_transit_required: true
+  secret_storage: env_file_or_secret_manager
+
+audit_requirements:
+  pipeline_run_audit_required: true
+  data_quality_audit_required: true
+  min_retention_days: 90
+
+change_management:
+  contract_approval_required: true
+  breaking_change_review_required: true
+  reviewers:
+    - data_platform_lead
+    - analytics_engineering_lead
+    - security_reviewer

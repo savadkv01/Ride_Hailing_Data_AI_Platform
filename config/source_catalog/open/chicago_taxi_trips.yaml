@@ -1,0 +1,27 @@
+source_id: open_chicago_taxi_trips
+source_type: open_batch
+domain: trip_lifecycle_tracking
+city_id: CHICAGO
+owner: data_platform
+status: active
+contract_version: chicago_v1
+ingestion:
+  format: csv_or_parquet
+  mode: batch_incremental
+  landing_path: lakehouse/bronze/open/chicago_taxi
+  schedule: daily
+  source_urls:
+    - https://data.cityofchicago.org/
+  dataset_identifier: wrvz-psew
+  watermark_column: trip_start_timestamp
+canonical_target:
+  target_table: op_trip_events
+  mapping_ref: config/source_catalog/canonical_alignment.yaml#source_mappings.chicago_taxi_trips
+quality_rules:
+  - required_columns_present
+  - start_before_end
+  - non_negative_fare
+  - non_negative_distance
+lineage:
+  source_system: chicago_taxi
+  source_record_key: trip_id

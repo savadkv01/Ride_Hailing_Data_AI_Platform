@@ -1,0 +1,43 @@
+# Environment and secret files
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Keep example templates in version control
+!.env.example
+!**/.env.example
+
+# Local compose credentials
+/docker/compose/.env.local
+/docker/compose/.env.enterprise-sim
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/*.log
+
+# Runtime data and logs
+logs/**
+!logs/.gitkeep
+lakehouse/bronze/**
+lakehouse/silver/**
+lakehouse/gold/**
+!lakehouse/**/.gitkeep
+
+# Build/model artifacts
+ml/artifacts/**
+!ml/artifacts/.gitkeep
+warehouse/dbt/target/**
+warehouse/dbt/logs/**
+vector/**/tmp/**
+
+# Local generated reports
+docs/operations/run-report-*.md

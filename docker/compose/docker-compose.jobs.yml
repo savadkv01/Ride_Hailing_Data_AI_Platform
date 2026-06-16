@@ -1,0 +1,40 @@
+services:
+  ingestion-jobs:
+    image: rh-ingestion-jobs:local
+    build:
+      context: ../../
+      dockerfile: docker/jobs/ingestion.Dockerfile
+    networks:
+      - platform_core_net
+    profiles: ["jobs"]
+
+  warehouse-jobs:
+    image: rh-warehouse-jobs:local
+    build:
+      context: ../../
+      dockerfile: docker/jobs/warehouse.Dockerfile
+    networks:
+      - platform_core_net
+    profiles: ["jobs"]
+
+  ml-jobs:
+    image: rh-ml-jobs:local
+    build:
+      context: ../../
+      dockerfile: docker/jobs/ml.Dockerfile
+    networks:
+      - platform_core_net
+    profiles: ["jobs"]
+
+  ai-jobs:
+    image: rh-ai-jobs:local
+    build:
+      context: ../../
+      dockerfile: docker/jobs/ai.Dockerfile
+    networks:
+      - platform_core_net
+    profiles: ["jobs"]
+
+networks:
+  platform_core_net:
+    external: true

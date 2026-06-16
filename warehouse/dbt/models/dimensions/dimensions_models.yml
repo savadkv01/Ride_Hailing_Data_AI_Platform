@@ -1,0 +1,52 @@
+version: 2
+
+models:
+  - name: dim_city
+    description: Conformed city dimension.
+    columns:
+      - name: city_key
+        tests: [not_null, unique]
+      - name: city_id
+        tests: [not_null]
+
+  - name: dim_rider
+    description: Conformed rider dimension.
+    columns:
+      - name: rider_key
+        tests: [not_null, unique]
+      - name: rider_id
+        tests: [not_null]
+
+  - name: dim_driver
+    description: Conformed driver dimension.
+    columns:
+      - name: driver_key
+        tests: [not_null, unique]
+      - name: driver_id
+        tests: [not_null]
+
+  - name: dim_vehicle
+    description: Conformed vehicle dimension.
+    columns:
+      - name: vehicle_key
+        tests: [not_null, unique]
+      - name: vehicle_id
+        tests: [not_null]
+
+  - name: dim_promotion
+    description: Conformed promotion dimension.
+    columns:
+      - name: promotion_key
+        tests: [not_null, unique]
+
+  - name: dim_payment_method
+    description: Conformed payment method dimension.
+    columns:
+      - name: payment_method_key
+        tests: [not_null, unique]
+
+  - name: dim_time
+    description: Conformed time dimension at hour grain.
+    columns:
+      - name: time_key
+        tests: [not_null, unique]

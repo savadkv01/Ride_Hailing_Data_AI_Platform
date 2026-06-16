@@ -1,0 +1,9 @@
+source_id: synthetic_dim_vehicle_seed
+source_type: synthetic_batch
+domain: synthetic_master_reference
+entity: vehicle
+status: active
+contract_version: synthetic_dim_v1
+target_table: dim_vehicle_seed
+generator_script: ingestion/synthetic/generate_dim_vehicle_seed.py
+key_fields: [vehicle_id]

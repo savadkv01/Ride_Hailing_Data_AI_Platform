@@ -1,0 +1,43 @@
+catalog_version: 1.0.0
+updated_on: 2026-03-02
+
+open_sources:
+  - config/source_catalog/open/nyc_tlc_trips.yaml
+  - config/source_catalog/open/chicago_taxi_trips.yaml
+
+synthetic_sources:
+  - config/source_catalog/synthetic/synthetic_real_time_ride_events.yaml
+  - config/source_catalog/synthetic/synthetic_trip_events.yaml
+  - config/source_catalog/synthetic/synthetic_driver_location_events.yaml
+  - config/source_catalog/synthetic/synthetic_rider_app_events.yaml
+  - config/source_catalog/synthetic/synthetic_payment_events.yaml
+  - config/source_catalog/synthetic/synthetic_surge_pricing_events.yaml
+  - config/source_catalog/synthetic/synthetic_promotion_events.yaml
+  - config/source_catalog/synthetic/synthetic_refund_events.yaml
+  - config/source_catalog/synthetic/synthetic_review_events.yaml
+  - config/source_catalog/synthetic/synthetic_driver_earnings_events.yaml
+  - config/source_catalog/synthetic/synthetic_incentive_events.yaml
+  - config/source_catalog/synthetic/synthetic_fraud_signal_events.yaml
+  - config/source_catalog/synthetic/synthetic_support_ticket_events.yaml
+  - config/source_catalog/synthetic/synthetic_geo_events.yaml
+  - config/source_catalog/synthetic/synthetic_city_agg_events.yaml
+  - config/source_catalog/synthetic/synthetic_revenue_margin_events.yaml
+
+synthetic_dimension_sources:
+  - config/source_catalog/synthetic/synthetic_dim_rider_seed.yaml
+  - config/source_catalog/synthetic/synthetic_dim_driver_seed.yaml
+  - config/source_catalog/synthetic/synthetic_dim_vehicle_seed.yaml
+  - config/source_catalog/synthetic/synthetic_dim_city_seed.yaml
+  - config/source_catalog/synthetic/synthetic_dim_promotion_seed.yaml
+  - config/source_catalog/synthetic/synthetic_dim_payment_method_seed.yaml
+
+synthetic_vector_corpus_sources:
+  - config/source_catalog/synthetic/synthetic_reviews_corpus.yaml
+  - config/source_catalog/synthetic/synthetic_support_tickets_corpus.yaml
+  - config/source_catalog/synthetic/synthetic_policy_docs_corpus.yaml
+  - config/source_catalog/synthetic/synthetic_faq_corpus.yaml
+  - config/source_catalog/synthetic/synthetic_fraud_cases_corpus.yaml
+
+alignment:
+  canonical_mapping: config/source_catalog/canonical_alignment.yaml
+  standard: docs/standards/open-synthetic-alignment-standard.md

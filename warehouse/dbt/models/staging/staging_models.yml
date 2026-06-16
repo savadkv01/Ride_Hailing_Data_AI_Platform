@@ -1,0 +1,12 @@
+version: 2
+
+models:
+  - name: stg_silver_canonical_events
+    description: Standardized canonical event source for dimensional models.
+    columns:
+      - name: event_id
+        tests: [not_null, unique]
+      - name: event_time
+        tests: [not_null]
+      - name: city_id
+        tests: [not_null]

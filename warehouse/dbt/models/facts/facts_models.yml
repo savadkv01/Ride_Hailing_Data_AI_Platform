@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: fact_trip
+    description: Trip-level fact table.
+    columns:
+      - name: trip_fact_key
+        tests: [not_null, unique]
+      - name: trip_id
+        tests: [not_null]
+
+  - name: fact_driver_earnings
+    description: Driver earnings fact table.
+    columns:
+      - name: earning_fact_key
+        tests: [not_null, unique]
+      - name: trip_id
+        tests: [not_null]
+
+  - name: fact_payment
+    description: Payment fact table.
+    columns:
+      - name: payment_fact_key
+        tests: [not_null, unique]
+      - name: payment_id
+        tests: [not_null]
+
+  - name: fact_review
+    description: Review fact table.
+    columns:
+      - name: review_fact_key
+        tests: [not_null, unique]
+      - name: review_id
+        tests: [not_null]
+
+  - name: fact_fraud
+    description: Fraud fact table.
+    columns:
+      - name: fraud_fact_key
+        tests: [not_null, unique]
+      - name: fraud_case_id
+        tests: [not_null]
+
+  - name: fact_operational_event
+    description: Operational event fact table.
+    columns:
+      - name: operational_event_fact_key
+        tests: [not_null, unique]
+      - name: event_id
+        tests: [not_null]

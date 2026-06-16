@@ -1,0 +1,76 @@
+version: 1
+updated_at: 2026-03-03
+
+scaling_policy:
+  partition_keys:
+    kafka_primary: [city_id, trip_id]
+    lakehouse_primary: [city_id, event_date]
+  capacity_tiers:
+    pilot:
+      max_events_per_hour_per_city: 10000
+      min_kafka_partitions_per_topic: 3
+      max_loader_records_per_run: 5000
+    scaled:
+      max_events_per_hour_per_city: 100000
+      min_kafka_partitions_per_topic: 12
+      max_loader_records_per_run: 50000
+    enterprise:
+      max_events_per_hour_per_city: 500000
+      min_kafka_partitions_per_topic: 24
+      max_loader_records_per_run: 250000
+
+city_registry:
+  - city_id: NYC
+    city_name: New York City
+    country: US
+    timezone: America/New_York
+    currency: USD
+    tier: scaled
+    enabled: true
+    data_sources:
+      open_data: nyc_tlc
+      synthetic: true
+  - city_id: CHICAGO
+    city_name: Chicago
+    country: US
+    timezone: America/Chicago
+    currency: USD
+    tier: scaled
+    enabled: true
+    data_sources:
+      open_data: chicago_taxi
+      synthetic: true
+  - city_id: SF
+    city_name: San Francisco
+    country: US
+    timezone: America/Los_Angeles
+    currency: USD
+    tier: pilot
+    enabled: false
+    data_sources:
+      open_data: pending
+      synthetic: true
+
+onboarding_gates:
+  required_checks:
+    - canonical_mapping_validated
+    - ingestion_smoke_passed
+    - dbt_tests_passed
+    - data_quality_threshold_met
+  min_data_quality_pass_rate: 0.99
+  rollout_modes: [pilot, scaled, enterprise]
+
+ai_policy:
+  vector_index:
+    city_filter_enabled: true
+    metadata_fields: [cityId, sourceId, sourceType]
+  rag:
+    default_top_k: 5
+    enforce_city_scope: false
+
+observability:
+  per_city_run_audit_required: true
+  per_city_dq_tracking_required: true
+  alert_thresholds:
+    ingestion_failure_rate: 0.02
+    dq_failure_rate: 0.01

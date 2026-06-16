@@ -1,0 +1,9 @@
+source_id: synthetic_support_tickets_corpus
+source_type: synthetic_batch_text
+domain: vector_text_corpus
+entity: support_tickets
+status: active
+contract_version: synthetic_text_v1
+target_table: support_tickets_corpus
+generator_script: ingestion/synthetic/generate_support_tickets_corpus.py
+key_fields: [doc_id]

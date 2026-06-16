@@ -1,0 +1,11 @@
+source_id: synthetic_support_ticket_events
+source_type: synthetic_stream
+domain: customer_support_logs
+status: active
+contract_version: synthetic_v1
+kafka_topic: rh.support.tickets.v1
+target_table: op_support_ticket_events
+generator_script: ingestion/synthetic/generate_support_ticket_events.py
+key_fields: [support_ticket_id, trip_id]
+watermark_column: event_time
+city_scope: [NYC, CHICAGO, DUBAI]

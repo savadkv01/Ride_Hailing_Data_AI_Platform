@@ -1,0 +1,11 @@
+source_id: synthetic_driver_location_events
+source_type: synthetic_stream
+domain: driver_location_streaming
+status: active
+contract_version: synthetic_v1
+kafka_topic: rh.driver.location.pings.v1
+target_table: op_driver_location_events
+generator_script: ingestion/synthetic/generate_driver_location_events.py
+key_fields: [driver_id]
+watermark_column: event_time
+city_scope: [NYC, CHICAGO, DUBAI]

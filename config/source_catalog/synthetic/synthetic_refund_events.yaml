@@ -1,0 +1,11 @@
+source_id: synthetic_refund_events
+source_type: synthetic_stream
+domain: refunds
+status: active
+contract_version: synthetic_v1
+kafka_topic: rh.refund.events.v1
+target_table: op_refund_events
+generator_script: ingestion/synthetic/generate_refund_events.py
+key_fields: [refund_id, payment_id]
+watermark_column: event_time
+city_scope: [NYC, CHICAGO, DUBAI]

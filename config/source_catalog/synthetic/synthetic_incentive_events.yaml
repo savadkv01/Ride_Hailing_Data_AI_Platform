@@ -1,0 +1,11 @@
+source_id: synthetic_incentive_events
+source_type: synthetic_stream
+domain: incentives
+status: active
+contract_version: synthetic_v1
+kafka_topic: rh.incentive.events.v1
+target_table: op_incentive_events
+generator_script: ingestion/synthetic/generate_incentive_events.py
+key_fields: [incentive_id, driver_id]
+watermark_column: event_time
+city_scope: [NYC, CHICAGO, DUBAI]

@@ -1,0 +1,27 @@
+source_id: open_nyc_tlc_trips
+source_type: open_batch
+domain: trip_lifecycle_tracking
+city_id: NYC
+owner: data_platform
+status: active
+contract_version: nyc_v1
+ingestion:
+  format: parquet
+  mode: batch_incremental
+  landing_path: lakehouse/bronze/open/nyc_tlc
+  schedule: daily
+  source_urls:
+    - https://d37ci6vzurychx.cloudfront.net/trip-data/
+  file_pattern: yellow_tripdata_*.parquet
+  watermark_column: tpep_pickup_datetime
+canonical_target:
+  target_table: op_trip_events
+  mapping_ref: config/source_catalog/canonical_alignment.yaml#source_mappings.nyc_tlc_trip_records
+quality_rules:
+  - required_columns_present
+  - pickup_before_dropoff
+  - non_negative_fare
+  - non_negative_distance
+lineage:
+  source_system: nyc_tlc
+  source_record_key: vendorid+tpep_pickup_datetime+pulocationid+dolocationid

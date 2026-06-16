@@ -1,0 +1,9 @@
+source_id: synthetic_reviews_corpus
+source_type: synthetic_batch_text
+domain: vector_text_corpus
+entity: reviews
+status: active
+contract_version: synthetic_text_v1
+target_table: reviews_corpus
+generator_script: ingestion/synthetic/generate_reviews_corpus.py
+key_fields: [doc_id]

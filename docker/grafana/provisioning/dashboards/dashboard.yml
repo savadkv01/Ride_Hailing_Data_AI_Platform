@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: 'Ride Hailing Dashboards'
+    orgId: 1
+    folder: 'Ride Hailing Platform'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

@@ -1,0 +1,17 @@
+source_catalog_index: config/source_catalog/source_catalog_index.yaml
+vector_sources_key: synthetic_vector_corpus_sources
+
+generation:
+  docs_per_source: 10
+
+embedding:
+  provider: hash
+  hash_dim: 256
+  ollama_url: http://localhost:11434
+  ollama_model: nomic-embed-text
+  allow_fallback_to_hash: true
+
+weaviate:
+  url: http://localhost:8080
+  class_name: RideDocument
+  batch_size: 50

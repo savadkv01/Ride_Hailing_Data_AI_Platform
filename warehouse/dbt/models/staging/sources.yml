@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: staging
+    schema: staging
+    tables:
+      - name: silver_canonical_events
+        description: Canonical event stream landed from Spark Silver layer.
+        columns:
+          - name: event_id
+            tests: [not_null, unique]
+          - name: event_time
+            tests: [not_null]
+          - name: city_id
+            tests: [not_null]

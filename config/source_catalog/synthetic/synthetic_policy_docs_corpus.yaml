@@ -1,0 +1,9 @@
+source_id: synthetic_policy_docs_corpus
+source_type: synthetic_batch_text
+domain: vector_text_corpus
+entity: policy_docs
+status: active
+contract_version: synthetic_text_v1
+target_table: policy_docs_corpus
+generator_script: ingestion/synthetic/generate_policy_docs_corpus.py
+key_fields: [doc_id]

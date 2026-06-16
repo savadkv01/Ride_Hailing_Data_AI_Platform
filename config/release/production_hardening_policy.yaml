@@ -1,0 +1,49 @@
+version: 1
+updated_at: 2026-03-03
+
+environments:
+  dev:
+    requires_manual_approval: false
+    min_test_pass_rate: 0.9
+  staging:
+    requires_manual_approval: true
+    min_test_pass_rate: 0.98
+  prod:
+    requires_manual_approval: true
+    min_test_pass_rate: 1.0
+
+release_gates:
+  required_checks:
+    - ci_workflow_passed
+    - contract_validation_passed
+    - data_quality_checks_passed
+    - security_scan_passed
+    - smoke_tests_passed
+  required_approvers:
+    - platform_owner
+    - data_governance_owner
+    - sre_owner
+
+resilience:
+  deployment_strategy: canary_or_blue_green
+  rollback:
+    automatic_on_threshold_breach: true
+    max_error_rate: 0.01
+    max_p95_latency_ms: 1200
+    rollback_within_minutes: 15
+  recovery_objectives:
+    rto_minutes: 60
+    rpo_minutes: 15
+
+observability_requirements:
+  dashboards_required: true
+  alerts_required: true
+  alert_targets:
+    - platform_oncall
+    - data_oncall
+
+security_requirements:
+  secrets_in_repo_forbidden: true
+  key_vault_or_secret_manager_required: true
+  least_privilege_required: true
+  audit_trail_required: true

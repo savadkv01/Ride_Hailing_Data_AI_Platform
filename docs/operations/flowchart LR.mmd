@@ -1,0 +1,52 @@
+flowchart LR
+
+  subgraph S1[Streaming Ingestion]
+    SP[Synthetic Producers\nCatalog Producer Manager] --> K[(Kafka Topics)]
+    K --> LK[Kafka to Postgres Loader\nLoad Kafka To Postgres]
+    LK --> ST[(staging.silver_canonical_events)]
+  end
+
+  subgraph S2[Batch Ingestion - Open Data]
+    NYC[NYC TLC Download\nDownload NYC TLC] --> BN[Normalize NYC\nNormalize NYC To Canonical]
+    CHI[Chicago Download\nDownload Chicago Taxi] --> BC[Normalize Chicago\nNormalize Chicago To Canonical]
+    BN --> BR[(lakehouse bronze canonical)]
+    BC --> BR
+  end
+
+  subgraph S3[Warehouse Transformations]
+    ST --> DBT[dbt Transform and Tests\nRun dbt With Audit]
+    BR --> DBT
+    DBT --> G[(gold schema\nDimensions Facts Marts)]
+    G --> KPI[(gold.mart_city_daily_kpis)]
+  end
+
+  subgraph S4[AI Layer]
+    G --> MF[ML Feature Builder\nBuild Feature Tables]
+    MF --> MLT[(ml feature tables)]
+    MLT --> MT[Model Training\nDemand Surge Fraud Churn]
+    MT --> MA[(ml artifacts joblib)]
+
+    G --> VC[Vector Builder\nBuild And Index Vectors]
+    VC --> WV[(Weaviate\nRideDocument)]
+    WV --> RAG[RAG Assistant\nRide Intelligence Assistant]
+    RAG --> API[FastAPI Endpoints]
+  end
+
+  subgraph S5[Orchestration & Observability]
+    AF[Airflow DAGs\nE2E and operational controls] --> SP
+    AF --> NYC
+    AF --> CHI
+    AF --> DBT
+    AF --> MF
+    AF --> VC
+    AF --> RAG
+
+    AQ[(metadata.pipeline_run_audit)]
+    DQ[Data Quality Monitor\nMonitor Data Quality] --> AQ
+    LK --> AQ
+    DBT --> AQ
+    MF --> AQ
+    MT --> AQ
+    VC --> AQ
+    RAG --> AQ
+  end

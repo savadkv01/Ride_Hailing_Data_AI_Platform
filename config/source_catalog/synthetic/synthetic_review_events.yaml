@@ -1,0 +1,11 @@
+source_id: synthetic_review_events
+source_type: synthetic_stream
+domain: ratings_reviews
+status: active
+contract_version: synthetic_v1
+kafka_topic: rh.review.events.v1
+target_table: op_review_events
+generator_script: ingestion/synthetic/generate_review_events.py
+key_fields: [review_id, trip_id]
+watermark_column: event_time
+city_scope: [NYC, CHICAGO, DUBAI]

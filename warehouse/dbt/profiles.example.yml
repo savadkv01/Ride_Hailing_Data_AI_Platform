@@ -1,0 +1,12 @@
+ride_hailing_warehouse:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: localhost
+      port: 5432
+      user: ride_admin
+      password: ride_password
+      dbname: ride_warehouse
+      schema: gold
+      threads: 4

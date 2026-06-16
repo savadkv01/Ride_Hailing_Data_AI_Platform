@@ -1,0 +1,157 @@
+version: 1.0.0
+updated_on: 2026-03-02
+purpose: Unify open and synthetic ride-hailing sources into one canonical platform schema.
+
+canonical_trip_event:
+  grain: one event per trip state transition
+  primary_keys: [event_id]
+  business_keys: [trip_id, event_type, event_time]
+  required_fields:
+    - event_id
+    - trip_id
+    - city_id
+    - rider_id
+    - driver_id
+    - event_type
+    - event_time
+    - pickup_ts
+    - dropoff_ts
+    - pickup_lat
+    - pickup_lng
+    - dropoff_lat
+    - dropoff_lng
+    - distance_km
+    - duration_sec
+    - fare_total
+    - surge_multiplier
+    - promotion_amount
+    - platform_fee
+    - driver_payout
+    - payment_method_code
+    - source_system
+    - source_record_id
+    - schema_version
+
+canonical_domains_required:
+  - real_time_ride_events
+  - driver_location_streaming
+  - rider_app_events
+  - trip_lifecycle_tracking
+  - payment_processing
+  - surge_pricing
+  - discounts_and_promotions
+  - refunds
+  - ratings_reviews
+  - driver_earnings
+  - incentives
+  - fraud_signals
+  - customer_support_logs
+  - geo_location_data
+  - city_level_aggregation
+  - revenue_margin_platform_fee
+
+source_mappings:
+  nyc_tlc_trip_records:
+    source_type: open_batch
+    schema_version: nyc_v1
+    transforms:
+      trip_id: concat('nyc_', vendorid, '_', tpep_pickup_datetime, '_', pulocationid, '_', dolocationid)
+      rider_id: hash(concat('nyc_rider_', pulocationid, '_', dolocationid, '_', tpep_pickup_datetime))
+      driver_id: hash(concat('nyc_driver_', vendorid))
+      city_id: literal('NYC')
+      event_type: literal('trip_completed')
+      event_time: tpep_dropoff_datetime
+      pickup_ts: tpep_pickup_datetime
+      dropoff_ts: tpep_dropoff_datetime
+      pickup_lat: null
+      pickup_lng: null
+      dropoff_lat: null
+      dropoff_lng: null
+      distance_km: trip_distance * 1.60934
+      duration_sec: timestamp_diff_seconds(tpep_pickup_datetime, tpep_dropoff_datetime)
+      fare_total: total_amount
+      surge_multiplier: coalesce(congestion_surcharge_multiplier, 1.0)
+      promotion_amount: coalesce(discount_amount, 0.0)
+      platform_fee: derive_platform_fee(total_amount)
+      driver_payout: fare_total - platform_fee - promotion_amount
+      payment_method_code: map_payment_type(payment_type)
+      source_system: literal('nyc_tlc')
+      source_record_id: concat(vendorid, '-', tpep_pickup_datetime, '-', pulocationid, '-', dolocationid)
+      schema_version: literal('nyc_v1')
+
+  chicago_taxi_trips:
+    source_type: open_batch
+    schema_version: chicago_v1
+    transforms:
+      trip_id: concat('chi_', trip_id)
+      rider_id: hash(concat('chi_rider_', pickup_community_area, '_', trip_start_timestamp))
+      driver_id: hash(concat('chi_driver_', taxi_id))
+      city_id: literal('CHICAGO')
+      event_type: literal('trip_completed')
+      event_time: trip_end_timestamp
+      pickup_ts: trip_start_timestamp
+      dropoff_ts: trip_end_timestamp
+      pickup_lat: pickup_centroid_latitude
+      pickup_lng: pickup_centroid_longitude
+      dropoff_lat: dropoff_centroid_latitude
+      dropoff_lng: dropoff_centroid_longitude
+      distance_km: trip_miles * 1.60934
+      duration_sec: trip_seconds
+      fare_total: fare + tips + tolls + extras
+      surge_multiplier: derive_surge_from_fare_components(fare, trip_seconds, trip_miles)
+      promotion_amount: coalesce(company_discount, 0.0)
+      platform_fee: derive_platform_fee(fare_total)
+      driver_payout: fare_total - platform_fee - promotion_amount
+      payment_method_code: map_payment_type(payment_type)
+      source_system: literal('chicago_taxi')
+      source_record_id: cast(trip_id as string)
+      schema_version: literal('chicago_v1')
+
+  synthetic_ride_events:
+    source_type: synthetic_stream
+    schema_version: synthetic_v1
+    transforms:
+      trip_id: trip_id
+      rider_id: rider_id
+      driver_id: driver_id
+      city_id: city_id
+      event_type: event_type
+      event_time: event_time
+      pickup_ts: pickup_ts
+      dropoff_ts: dropoff_ts
+      pickup_lat: pickup_lat
+      pickup_lng: pickup_lng
+      dropoff_lat: dropoff_lat
+      dropoff_lng: dropoff_lng
+      distance_km: distance_km
+      duration_sec: duration_sec
+      fare_total: fare_total
+      surge_multiplier: surge_multiplier
+      promotion_amount: promotion_amount
+      platform_fee: platform_fee
+      driver_payout: driver_payout
+      payment_method_code: payment_method_code
+      source_system: literal('synthetic_generator')
+      source_record_id: source_record_id
+      schema_version: literal('synthetic_v1')
+
+alignment_rules:
+  - id: AR001
+    rule: event_time must be >= pickup_ts and <= dropoff_ts for completed trips
+    severity: high
+  - id: AR002
+    rule: distance_km >= 0 and duration_sec >= 0
+    severity: high
+  - id: AR003
+    rule: fare_total = platform_fee + driver_payout + promotion_amount (+ tax components if present)
+    severity: high
+  - id: AR004
+    rule: city_id must be one of configured city dimension keys
+    severity: medium
+  - id: AR005
+    rule: event_id uniqueness enforced per source batch/stream window
+    severity: high
+
+notes:
+  - Open datasets are normalized to canonical_trip_event and enriched for missing ride-hailing fields.
+  - Non-trip domains (support, fraud, app events, location) are synthetic-first and must use canonical domain contracts.

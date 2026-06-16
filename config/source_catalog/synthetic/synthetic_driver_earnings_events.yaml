@@ -1,0 +1,11 @@
+source_id: synthetic_driver_earnings_events
+source_type: synthetic_stream
+domain: driver_earnings
+status: active
+contract_version: synthetic_v1
+kafka_topic: rh.earnings.events.v1
+target_table: op_driver_earnings_events
+generator_script: ingestion/synthetic/generate_driver_earnings_events.py
+key_fields: [earning_id, trip_id]
+watermark_column: event_time
+city_scope: [NYC, CHICAGO, DUBAI]

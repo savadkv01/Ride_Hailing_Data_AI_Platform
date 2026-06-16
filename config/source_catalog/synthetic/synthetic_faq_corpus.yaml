@@ -1,0 +1,9 @@
+source_id: synthetic_faq_corpus
+source_type: synthetic_batch_text
+domain: vector_text_corpus
+entity: faq_docs
+status: active
+contract_version: synthetic_text_v1
+target_table: faq_docs_corpus
+generator_script: ingestion/synthetic/generate_faq_corpus.py
+key_fields: [doc_id]

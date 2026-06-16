@@ -1,0 +1,11 @@
+source_id: synthetic_surge_pricing_events
+source_type: synthetic_stream
+domain: surge_pricing
+status: active
+contract_version: synthetic_v1
+kafka_topic: rh.pricing.surge.signals.v1
+target_table: op_city_agg_events
+generator_script: ingestion/synthetic/generate_surge_pricing_events.py
+key_fields: [city_id]
+watermark_column: event_time
+city_scope: [NYC, CHICAGO, DUBAI]

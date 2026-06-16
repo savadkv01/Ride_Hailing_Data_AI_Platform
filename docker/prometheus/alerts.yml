@@ -1,0 +1,38 @@
+groups:
+  - name: ride_hailing_platform_alerts
+    rules:
+      - alert: FastAPIHealthMissing
+        expr: up{job="fastapi"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "FastAPI service is down"
+          description: "FastAPI endpoint has not been scraped successfully for 1 minute."
+
+      - alert: FastAPIHighErrorRate
+        expr: |
+          (
+            sum(rate(fastapi_requests_total{status=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(fastapi_requests_total[5m])), 0.001)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "FastAPI 5xx error rate is elevated"
+          description: "5xx response ratio has stayed above 5% for 5 minutes."
+
+      - alert: FastAPIHighP95Latency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(fastapi_request_latency_seconds_bucket[5m])) by (le)
+          ) > 1.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "FastAPI p95 latency is high"
+          description: "p95 API latency has exceeded 1.5 seconds for 10 minutes."
